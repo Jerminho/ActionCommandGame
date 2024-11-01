@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace ActionCommandGame.DTO.Results
 {
-    public class PlayerItemResult
+    public class PlayerItemResultDto
     {
         public int Id { get; set; }
         public int PlayerId { get; set; }

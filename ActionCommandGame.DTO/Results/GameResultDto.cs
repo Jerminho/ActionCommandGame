@@ -7,11 +7,11 @@ using System.Threading.Tasks;
 
 namespace ActionCommandGame.DTO.Results
 {
-    public class GameResult
+    public class GameResultDto
     {
-        public PlayerResult? Player { get; set; }
-        public PositiveGameEventResult? PositiveGameEvent { get; set; }
-        public NegativeGameEventResult? NegativeGameEvent { get; set; }
+        public PlayerResultDto? Player { get; set; }
+        public PositiveGameEventResultDto? PositiveGameEvent { get; set; }
+        public NegativeGameEventResultDto? NegativeGameEvent { get; set; }
         public IList<ServiceMessage> NegativeGameEventMessages { get; set; } = new List<ServiceMessage>();
     }
 }

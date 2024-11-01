@@ -4,10 +4,10 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace ActionCommandGame.DTO.Filters
+namespace ActionCommandGame.DTO.Requests
 {
-    public class PlayerFilter
+    public class PlayerRequestDto
     {
-        public bool? FilterUserPlayers { get; set; }
+        public required string Name { get; set; }
     }
 }

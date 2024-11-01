@@ -6,13 +6,15 @@ using System.Threading.Tasks;
 
 namespace ActionCommandGame.DTO.Results
 {
-    public class PositiveGameEventResult
+    public class ItemResultDto
     {
         public int Id { get; set; }
         public required string Name { get; set; }
         public string? Description { get; set; }
-        public int Money { get; set; }
-        public int Experience { get; set; }
-        public int Probability { get; set; }
+        public int Price { get; set; }
+        public int Fuel { get; set; }
+        public int Attack { get; set; }
+        public int Defense { get; set; }
+        public int ActionCooldownSeconds { get; set; }
     }
 }

@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace ActionCommandGame.DTO.Requests
 {
-    public class UserSignInRequest
+    public class UserSignInRequestDto
     {
         public required string Email { get; set; }
         public required string Password { get; set; }

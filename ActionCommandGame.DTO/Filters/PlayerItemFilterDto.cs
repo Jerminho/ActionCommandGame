@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace ActionCommandGame.DTO.Filters
 {
-    public class PlayerItemFilter
+    public class PlayerItemFilterDto
     {
         public int? PlayerId { get; set; }
     }

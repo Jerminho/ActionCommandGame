@@ -6,9 +6,9 @@ using System.Threading.Tasks;
 
 namespace ActionCommandGame.DTO.Results
 {
-    public class BuyResult
+    public class BuyResultDto
     {
-        public PlayerResult? Player { get; set; }
-        public ItemResult? Item { get; set; }
+        public PlayerResultDto? Player { get; set; }
+        public ItemResultDto? Item { get; set; }
     }
 }
