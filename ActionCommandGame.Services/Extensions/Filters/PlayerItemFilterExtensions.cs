@@ -1,12 +1,12 @@
-﻿using ActionCommandGame.Model;
-using ActionCommandGame.Services.Model.Filters;
+﻿using ActionCommandGame.DTO.Filters;
+using ActionCommandGame.Model;
 
 namespace ActionCommandGame.Services.Extensions.Filters
 {
     internal static class PlayerItemFilterExtensions
     {
         public static IQueryable<PlayerItem> ApplyFilter(this IQueryable<PlayerItem> query,
-            PlayerItemFilter? filter)
+            PlayerItemFilterDto? filter)
         {
             if (filter is null)
             {

@@ -1,4 +1,5 @@
-﻿using ActionCommandGame.DTO.Results;
+﻿using ActionCommandGame.DTO.Filters;
+using ActionCommandGame.DTO.Results;
 using ActionCommandGame.Model;
 using ActionCommandGame.Repository;
 using ActionCommandGame.Services.Abstractions;
@@ -29,7 +30,7 @@ namespace ActionCommandGame.Services
             return new ServiceResult<PlayerItemResultDto>(playerItem);
         }
 
-        public async Task<ServiceResult<IList<PlayerItemResultDto>>> Find(PlayerItemFilter filter)
+        public async Task<ServiceResult<IList<PlayerItemResultDto>>> Find(PlayerItemFilterDto filter)
         {
             var playerItems = await _database.PlayerItems
                 .ApplyFilter(filter)
