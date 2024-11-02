@@ -1,7 +1,7 @@
 ﻿
+using ActionCommandGame.DTO.Filters;
 using ActionCommandGame.Extensions;
 using ActionCommandGame.Services.Abstractions;
-using ActionCommandGame.Services.Model.Filters;
 using ActionCommandGame.Ui.ConsoleApp.Abstractions;
 using ActionCommandGame.Ui.ConsoleApp.ConsoleWriters;
 using ActionCommandGame.Ui.ConsoleApp.Stores;
@@ -25,7 +25,7 @@ namespace ActionCommandGame.Ui.ConsoleApp.Views
         {
             ConsoleBlockWriter.Write("Leaderboard");
 
-            var playersResult = await _playerService.Find(new PlayerFilter());
+            var playersResult = await _playerService.Find(new PlayerFilterDto());
 
             if (playersResult.Data is null)
             {

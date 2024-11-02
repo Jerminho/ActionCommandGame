@@ -1,5 +1,5 @@
-﻿using ActionCommandGame.Services.Abstractions;
-using ActionCommandGame.Services.Model.Filters;
+﻿using ActionCommandGame.DTO.Filters;
+using ActionCommandGame.Services.Abstractions;
 using ActionCommandGame.Ui.ConsoleApp.Abstractions;
 using ActionCommandGame.Ui.ConsoleApp.ConsoleWriters;
 using ActionCommandGame.Ui.ConsoleApp.Navigation;
@@ -42,7 +42,7 @@ namespace ActionCommandGame.Ui.ConsoleApp.Views
 
         private async Task<int?> ReadPlayerId()
         {
-            var filter = new PlayerFilter { FilterUserPlayers = true };
+            var filter = new PlayerFilterDto { FilterUserPlayers = true };
             var players = await _playerService.Find(filter);
 
             if (players.Data is null || !players.Data.Any())

@@ -1,6 +1,6 @@
-﻿using ActionCommandGame.Services.Abstractions;
+﻿using ActionCommandGame.DTO.Results;
+using ActionCommandGame.Services.Abstractions;
 using ActionCommandGame.Services.Model.Filters;
-using ActionCommandGame.Services.Model.Results;
 using ActionCommandGame.Ui.ConsoleApp.Abstractions;
 using ActionCommandGame.Ui.ConsoleApp.ConsoleWriters;
 using ActionCommandGame.Ui.ConsoleApp.Stores;
@@ -37,7 +37,7 @@ namespace ActionCommandGame.Ui.ConsoleApp.Views
             }
         }
 
-        private static void ShowPlayerItem(PlayerItemResult playerItem)
+        private static void ShowPlayerItem(PlayerItemResultDto playerItem)
         {
             ConsoleWriter.WriteText($"\t{playerItem.Name}", ConsoleColor.White);
             if (!string.IsNullOrWhiteSpace(playerItem.Description))

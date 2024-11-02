@@ -216,7 +216,7 @@ namespace ActionCommandGame.Ui.ConsoleApp.Views
                 {
                     ConsoleWriter.WriteText(negativeGameEvent.Description);
                 }
-                ConsoleWriter.WriteMessages(result.Data.NegativeGameEventMessages);
+                ConsoleWriter.WriteMessages((IList<ServiceMessage>)result.Data.NegativeGameEventMessages);
             }
 
             ConsoleWriter.WriteMessages(result.Messages);
@@ -233,7 +233,7 @@ namespace ActionCommandGame.Ui.ConsoleApp.Views
                 ConsoleWriter.WriteText($"You bought {result.Data.Item?.Name} for €{result.Data.Item?.Price}");
                 ConsoleWriter.WriteText($"Thank you for shopping. Your current balance is €{result.Data.Player?.Money}.");
 
-                //Check if there are info and warning messages
+                
                 var nonErrorMessages =
                     result.Messages.Where(m => m.MessagePriority == MessagePriority.Error).ToList();
                 ConsoleWriter.WriteMessages(nonErrorMessages);

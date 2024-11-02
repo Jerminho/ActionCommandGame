@@ -1,5 +1,6 @@
-﻿using ActionCommandGame.Services.Abstractions;
-using ActionCommandGame.Services.Model.Results;
+﻿using ActionCommandGame.DTO.Results;
+using ActionCommandGame.Services.Abstractions;
+
 using ActionCommandGame.Ui.ConsoleApp.Abstractions;
 using ActionCommandGame.Ui.ConsoleApp.ConsoleWriters;
 
@@ -31,7 +32,7 @@ namespace ActionCommandGame.Ui.ConsoleApp.Views
             ConsoleWriter.WriteText();
         }
 
-        private static void ShowItem(ItemResult item)
+        private static void ShowItem(ItemResultDto item)
         {
             ConsoleWriter.WriteText($"\t[{item.Id}] {item.Name} €{item.Price}", ConsoleColor.White);
             if (!string.IsNullOrWhiteSpace(item.Description))

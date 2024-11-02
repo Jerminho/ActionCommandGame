@@ -92,23 +92,23 @@ namespace ActionCommandGame.Services
             };
         }
 
-        public async Task<ServiceResult<ItemResultDto>> Delete(int itemId)
+        public async Task<ServiceResult<bool>> Delete(int itemId)
         {
             var item = await _database.Items.SingleOrDefaultAsync(i => i.Id == itemId);
             if (item == null)
             {
-                return new ServiceResult<ItemResultDto>().NotFound();
+                return new ServiceResult<bool>().NotFound();
             }
 
             _database.Items.Remove(item);
             await _database.SaveChangesAsync();
 
-            return new ServiceResult<ItemResultDto>
+            return new ServiceResult<bool>(true)
             {
                 Messages = new List<ServiceMessage>
-                {
-                    new ServiceMessage { Code = "Deleted", Message = "Item deleted successfully" }
-                }
+        {
+            new ServiceMessage { Code = "Deleted", Message = "Item deleted successfully" }
+        }
             };
         }
     }
