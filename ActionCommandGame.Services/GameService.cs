@@ -1,11 +1,11 @@
 ﻿using ActionCommandGame.Configuration;
+using ActionCommandGame.DTO.Results; 
 using ActionCommandGame.Extensions;
 using ActionCommandGame.Model;
 using ActionCommandGame.Repository;
 using ActionCommandGame.Services.Abstractions;
 using ActionCommandGame.Services.Extensions;
 using ActionCommandGame.Services.Model.Core;
-using ActionCommandGame.Services.Model.Results;
 using Microsoft.EntityFrameworkCore;
 
 namespace ActionCommandGame.Services
@@ -38,30 +38,32 @@ namespace ActionCommandGame.Services
             _playerItemService = playerItemService;
         }
 
-        public async Task<ServiceResult<GameResult>> PerformAction(int playerId)
+        public async Task<ServiceResult<GameResultDto>> PerformAction(int playerId)
         {
-            //Check Cooldown
+            // Check Cooldown
             var player = await _database.Players
                 .Include(p => p.CurrentFuelPlayerItem).ThenInclude(pi => pi!.Item)
                 .Include(p => p.CurrentAttackPlayerItem).ThenInclude(pi => pi!.Item)
                 .Include(p => p.CurrentDefensePlayerItem).ThenInclude(pi => pi!.Item)
                 .SingleOrDefaultAsync(p => p.Id == playerId);
 
-            ServiceResult<PlayerResult> playerResult;
+            ServiceResult<PlayerResultDto> playerResult;
 
             if (player is null)
             {
-                return new ServiceResult<GameResult>
+                return new ServiceResult<GameResultDto>
                 {
                     Messages = new List<ServiceMessage>
-                        { new ServiceMessage { Code = "NotFound", Message = $"{nameof(Player)} was not found" } }
+                    {
+                        new ServiceMessage { Code = "NotFound", Message = $"{nameof(Player)} was not found" }
+                    }
                 };
             }
 
             if (player.LastActionExecutedDateTime.HasValue)
             {
-	            var elapsedSeconds = DateTime.UtcNow.Subtract(player.LastActionExecutedDateTime.Value).TotalSeconds;
-	            var cooldownSeconds = _appSettings.DefaultCooldownSeconds;
+                var elapsedSeconds = DateTime.UtcNow.Subtract(player.LastActionExecutedDateTime.Value).TotalSeconds;
+                var cooldownSeconds = _appSettings.DefaultCooldownSeconds;
 
                 if (player.CurrentFuelPlayerItem is not null)
                 {
@@ -70,28 +72,28 @@ namespace ActionCommandGame.Services
 
                 if (elapsedSeconds < cooldownSeconds)
                 {
-                    //Save Player
-                    await _database.SaveChangesAsync();
-
                     var waitSeconds = Math.Ceiling(cooldownSeconds - elapsedSeconds);
                     var waitText = $"You are still a bit tired. You have to wait another {waitSeconds} seconds.";
                     playerResult = await _playerService.Get(playerId);
-                    return new ServiceResult<GameResult>
+                    return new ServiceResult<GameResultDto>
                     {
-                        Data = new GameResult { Player = playerResult.Data },
+                        Data = new GameResultDto { Player = playerResult.Data },
                         Messages = new List<ServiceMessage> { new ServiceMessage { Code = "Cooldown", Message = waitText } }
                     };
                 }
             }
 
             player.LastActionExecutedDateTime = DateTime.UtcNow;
-            
+
             var hasAttackItem = player.CurrentAttackPlayerItemId.HasValue;
-            var positiveGameEvent = await _positiveGameEventService.GetRandomPositiveGameEvent(hasAttackItem);
-            if (positiveGameEvent.Data is null)
+
+            // Retrieve positive game event
+            var positiveGameEventResult = await _positiveGameEventService.GetRandomPositiveGameEvent(hasAttackItem);
+            if (positiveGameEventResult.Data is null)
             {
-                return new ServiceResult<GameResult>{Messages = 
-                    new List<ServiceMessage>
+                return new ServiceResult<GameResultDto>
+                {
+                    Messages = new List<ServiceMessage>
                     {
                         new ServiceMessage
                         {
@@ -99,31 +101,51 @@ namespace ActionCommandGame.Services
                             Message = "Something went wrong getting the Positive Game Event.",
                             MessagePriority = MessagePriority.Error
                         }
-                    }};
+                    }
+                };
             }
 
-            var negativeGameEvent = await _negativeGameEventService.GetRandomNegativeGameEvent();
+            // Retrieve negative game event
+            var negativeGameEventResult = await _negativeGameEventService.GetRandomNegativeGameEvent();
+            if (negativeGameEventResult.Data is null)
+            {
+                return new ServiceResult<GameResultDto>
+                {
+                    Messages = new List<ServiceMessage>
+                    {
+                        new ServiceMessage
+                        {
+                            Code = "Error",
+                            Message = "Something went wrong getting the Negative Game Event.",
+                            MessagePriority = MessagePriority.Error
+                        }
+                    }
+                };
+            }
 
             var oldLevel = player.GetLevel();
 
-            player.Money += positiveGameEvent.Data.Money;
-            player.Experience += positiveGameEvent.Data.Experience;
+            player.Money += positiveGameEventResult.Data.Money;
+            player.Experience += positiveGameEventResult.Data.Experience;
 
             var newLevel = player.GetLevel();
-
             var levelMessages = new List<ServiceMessage>();
-            //Check if we leveled up
+
+            // Check if we leveled up
             if (oldLevel < newLevel)
             {
-                levelMessages = new List<ServiceMessage>{new ServiceMessage{Code="LevelUp", Message = $"Congratulations, you arrived at level {newLevel}"}};
+                levelMessages = new List<ServiceMessage>
+                {
+                    new ServiceMessage { Code = "LevelUp", Message = $"Congratulations, you arrived at level {newLevel}" }
+                };
             }
 
-            //Consume fuel
+            // Consume fuel
             var fuelMessages = await ConsumeFuel(player);
 
             var attackMessages = new List<ServiceMessage>();
-            //Consume attack when we got some loot
-            if (positiveGameEvent.Data.Money > 0)
+            // Consume attack when we got some loot
+            if (positiveGameEventResult.Data.Money > 0)
             {
                 var consumeAttackMessages = await ConsumeAttack(player);
                 attackMessages.AddRange(consumeAttackMessages);
@@ -131,22 +153,24 @@ namespace ActionCommandGame.Services
 
             var defenseMessages = new List<ServiceMessage>();
             var negativeGameEventMessages = new List<ServiceMessage>();
-            if (negativeGameEvent.Data is not null)
+            var negativeGameEvent = negativeGameEventResult.Data; // Get the negative game event here
+
+            if (negativeGameEvent != null)
             {
-                //Check defense consumption
+                // Check defense consumption
                 if (player.CurrentDefensePlayerItem != null)
                 {
-                    negativeGameEventMessages.Add(new ServiceMessage { Code = "DefenseWithGear", Message = negativeGameEvent.Data.DefenseWithGearDescription });
-                    var consumeDefenseMessages = await ConsumeDefense(player, negativeGameEvent.Data.DefenseLoss);
+                    negativeGameEventMessages.Add(new ServiceMessage { Code = "DefenseWithGear", Message = negativeGameEvent.DefenseWithGearDescription });
+                    var consumeDefenseMessages = await ConsumeDefense(player, negativeGameEvent.DefenseLoss);
                     defenseMessages.AddRange(consumeDefenseMessages);
                 }
                 else
                 {
-                    negativeGameEventMessages.Add(new ServiceMessage { Code = "DefenseWithoutGear", Message = negativeGameEvent.Data.DefenseWithoutGearDescription });
+                    negativeGameEventMessages.Add(new ServiceMessage { Code = "DefenseWithoutGear", Message = negativeGameEvent.DefenseWithoutGearDescription });
 
-                    //If we have no defense item, consume the defense loss from Fuel and Attack
-                    var consumeFuelMessages = await ConsumeFuel(player, negativeGameEvent.Data.DefenseLoss);
-                    var consumeAttackMessages = await ConsumeAttack(player, negativeGameEvent.Data.DefenseLoss);
+                    // If we have no defense item, consume the defense loss from Fuel and Attack
+                    var consumeFuelMessages = await ConsumeFuel(player, negativeGameEvent.DefenseLoss);
+                    var consumeAttackMessages = await ConsumeAttack(player);
                     defenseMessages.AddRange(consumeFuelMessages);
                     defenseMessages.AddRange(consumeAttackMessages);
                 }
@@ -154,24 +178,24 @@ namespace ActionCommandGame.Services
 
             var warningMessages = GetWarningMessages(player);
 
-            //Save Player
+            // Save Player
             await _database.SaveChangesAsync();
 
             playerResult = await _playerService.Get(playerId);
-            var gameResult = new GameResult
+            var gameResult = new GameResultDto
             {
                 Player = playerResult.Data,
-                PositiveGameEvent = positiveGameEvent.Data,
-                NegativeGameEvent = negativeGameEvent.Data,
-                NegativeGameEventMessages = negativeGameEventMessages
+                PositiveGameEvent = positiveGameEventResult.Data,
+                NegativeGameEvent = negativeGameEvent,
+                NegativeGameEventMessages = (IList<DTO.ServiceMessage>)negativeGameEventMessages
             };
 
-            var serviceResult = new ServiceResult<GameResult>
+            var serviceResult = new ServiceResult<GameResultDto>
             {
                 Data = gameResult
             };
 
-            //Add all the messages to the player
+            // Add all the messages to the player
             serviceResult.WithMessages(levelMessages);
             serviceResult.WithMessages(warningMessages);
             serviceResult.WithMessages(fuelMessages);
@@ -181,42 +205,41 @@ namespace ActionCommandGame.Services
             return serviceResult;
         }
 
-        public async Task<ServiceResult<BuyResult>> Buy(int playerId, int itemId)
+        public async Task<ServiceResult<BuyResultDto>> Buy(int playerId, int itemId)
         {
             var player = await _database.Players.SingleOrDefaultAsync(p => p.Id == playerId);
             if (player == null)
             {
-                return new ServiceResult<BuyResult>().PlayerNotFound();
+                return new ServiceResult<BuyResultDto>().PlayerNotFound();
             }
 
             var item = await _database.Items.SingleOrDefaultAsync(i => i.Id == itemId);
             if (item == null)
             {
-                return new ServiceResult<BuyResult>().ItemNotFound();
+                return new ServiceResult<BuyResultDto>().ItemNotFound();
             }
 
             if (item.Price > player.Money)
             {
-                return new ServiceResult<BuyResult>().NotEnoughMoney();
+                return new ServiceResult<BuyResultDto>().NotEnoughMoney();
             }
 
             await _playerItemService.Create(playerId, itemId);
-
             player.Money -= item.Price;
 
-            //SaveChanges
+            // Save Changes
             await _database.SaveChangesAsync();
 
-            //Get the result objects
+            // Get the result objects using DTOs
             var playerResult = await _playerService.Get(playerId);
             var itemResult = await _itemService.Get(itemId);
 
-            var buyResult = new BuyResult
+            var buyResult = new BuyResultDto
             {
                 Player = playerResult.Data,
                 Item = itemResult.Data
             };
-            return new ServiceResult<BuyResult> { Data = buyResult };
+            return new ServiceResult<BuyResultDto> { Data = buyResult };
         }
 
         private async Task<IList<ServiceMessage>> ConsumeFuel(Player player, int fuelLoss = 1)
@@ -228,7 +251,7 @@ namespace ActionCommandGame.Services
                 {
                     await _playerItemService.Delete(player.CurrentFuelPlayerItemId.Value);
 
-                    //Load a new Fuel Item from inventory
+                    // Load a new Fuel Item from inventory
                     var newFuelItem = await _database.PlayerItems
                         .Include(pi => pi.Item)
                         .Where(pi => pi.PlayerId == player.Id && pi.Item.Fuel > 0)
@@ -239,135 +262,104 @@ namespace ActionCommandGame.Services
                     {
                         player.CurrentFuelPlayerItem = newFuelItem;
                         player.CurrentFuelPlayerItemId = newFuelItem.Id;
-                        return new List<ServiceMessage>{new ServiceMessage
+                        return new List<ServiceMessage>
                         {
-                            Code = "ReloadedFuel",
-                            Message = $"You are hungry and open a new {newFuelItem.Item.Name}. Yummy!"
-                        }};
+                            new ServiceMessage
+                            {
+                                Code = "ReloadedFuel",
+                                Message = $"You are hungry and open a new {newFuelItem.Item.Name} to fill your belly."
+                            }
+                        };
                     }
-
-                    return new List<ServiceMessage>{new ServiceMessage
+                    player.CurrentFuelPlayerItem = null;
+                    player.CurrentFuelPlayerItemId = null;
+                    return new List<ServiceMessage>
                     {
-                        Code = "NoFood",
-                        Message = "You are so hungry. You look into your bag and find ... nothing!",
-                        MessagePriority = MessagePriority.Warning
-                    }};
+                        new ServiceMessage
+                        {
+                            Code = "NoFuel",
+                            Message = $"You have run out of fuel. You cannot take further action."
+                        }
+                    };
                 }
             }
-
             return new List<ServiceMessage>();
         }
 
-        private async Task<IList<ServiceMessage>> ConsumeAttack(Player player, int attackLoss = 1)
+        private async Task<IList<ServiceMessage>> ConsumeAttack(Player player)
         {
-            if (player.CurrentAttackPlayerItem != null && player.CurrentAttackPlayerItemId.HasValue)
+            if (player.CurrentAttackPlayerItem != null)
             {
-                var oldAttackItemName = player.CurrentAttackPlayerItem.Item.Name;
-                player.CurrentAttackPlayerItem.RemainingAttack -= attackLoss;
+                player.CurrentAttackPlayerItem.RemainingAttack--;
                 if (player.CurrentAttackPlayerItem.RemainingAttack <= 0)
                 {
                     await _playerItemService.Delete(player.CurrentAttackPlayerItemId.Value);
-
-                    //Load a new Attack Item from inventory
-                    var newAttackItem = await _database.PlayerItems
-                        .Include(pi => pi.Item)
-                        .Where(pi => pi.PlayerId == player.Id && pi.Item.Attack > 0)
-                        .OrderByDescending(pi => pi.Item.Attack).FirstOrDefaultAsync();
-                    if (newAttackItem != null)
+                    player.CurrentAttackPlayerItem = null;
+                    player.CurrentAttackPlayerItemId = null;
+                    return new List<ServiceMessage>
                     {
-                        player.CurrentAttackPlayerItem = newAttackItem;
-                        player.CurrentAttackPlayerItemId = newAttackItem.Id;
-                        return new List<ServiceMessage>{new ServiceMessage
+                        new ServiceMessage
                         {
-                            Code = "ReloadedAttack",
-                            Message = $"You just broke {oldAttackItemName}. No worries, you swiftly wield a new {newAttackItem.Item.Name}. Yeah!",
-
-                        }};
-                    }
-
-                    return new List<ServiceMessage>{new ServiceMessage
-                    {
-                        Code = "NoAttack",
-                        Message = $"You just broke {oldAttackItemName}. This was your last tool. Bummer!",
-                        MessagePriority = MessagePriority.Warning
-                    }};
+                            Code = "NoAttackItem",
+                            Message = $"You have run out of your attack item."
+                        }
+                    };
                 }
             }
-            else
-            {
-                //If we don't have any attack tools, just consume more fuel in stead
-                await ConsumeFuel(player);
-            }
-
             return new List<ServiceMessage>();
         }
 
-        private async Task<IList<ServiceMessage>> ConsumeDefense(Player player, int defenseLoss = 1)
+        private async Task<IList<ServiceMessage>> ConsumeDefense(Player player, int defenseLoss)
         {
-            if (player.CurrentDefensePlayerItem != null && player.CurrentDefensePlayerItemId.HasValue)
+            if (player.CurrentDefensePlayerItem != null)
             {
-                var oldDefenseItemName = player.CurrentDefensePlayerItem.Item.Name;
                 player.CurrentDefensePlayerItem.RemainingDefense -= defenseLoss;
                 if (player.CurrentDefensePlayerItem.RemainingDefense <= 0)
                 {
                     await _playerItemService.Delete(player.CurrentDefensePlayerItemId.Value);
-
-                    //Load a new Defense Item from inventory
-                    var newDefenseItem = await _database.PlayerItems
-                        .Include(pi => pi.Item)
-                        .Where(pi => pi.PlayerId == player.Id && pi.Item.Defense > 0)
-                        .OrderByDescending(pi => pi.Item.Defense).FirstOrDefaultAsync();
-                    
-                    if (newDefenseItem != null)
+                    player.CurrentDefensePlayerItem = null;
+                    player.CurrentDefensePlayerItemId = null;
+                    return new List<ServiceMessage>
                     {
-                        player.CurrentDefensePlayerItem = newDefenseItem;
-                        player.CurrentDefensePlayerItemId = newDefenseItem.Id;
-
-                        return new List<ServiceMessage>{new ServiceMessage
+                        new ServiceMessage
                         {
-                            Code = "ReloadedDefense",
-                            Message = $"Your {oldDefenseItemName} is starting to smell. No worries, you swiftly put on a freshly washed {newDefenseItem.Item.Name}. Yeah!"
-                        }};
-                    }
-
-                    return new List<ServiceMessage>{new ServiceMessage
-                    {
-                        Code = "NoAttack",
-                        Message = $"You just lost {oldDefenseItemName}. You continue without protection. Did I just see something move?",
-                        MessagePriority = MessagePriority.Warning
-                    }};
+                            Code = "NoDefenseItem",
+                            Message = $"You have run out of your defense item."
+                        }
+                    };
                 }
             }
-            else
-            {
-                //If we don't have defensive gear, just consume more fuel in stead.
-                await ConsumeFuel(player);
-            }
-
             return new List<ServiceMessage>();
         }
 
-        private IList<ServiceMessage> GetWarningMessages(Player player)
+        private List<ServiceMessage> GetWarningMessages(Player player)
         {
-            var serviceMessages = new List<ServiceMessage>();
-
-            if (player.CurrentFuelPlayerItem == null)
+            var messages = new List<ServiceMessage>();
+            if (player.CurrentFuelPlayerItem?.RemainingFuel <= 0)
             {
-                var infoText = "Playing without food is hard. You need a long time to recover. Consider buying food from the shop.";
-                serviceMessages.Add(new ServiceMessage { Code = "NoFood", Message = infoText, MessagePriority = MessagePriority.Warning });
+                messages.Add(new ServiceMessage
+                {
+                    Code = "Warning",
+                    Message = "You are out of fuel. Please acquire new fuel to continue."
+                });
             }
-            if (player.CurrentAttackPlayerItem == null)
+            if (player.CurrentAttackPlayerItem?.RemainingAttack <= 0)
             {
-                var infoText = "Playing without tools is hard. You lost extra fuel. Consider buying tools from the shop.";
-                serviceMessages.Add(new ServiceMessage { Code = "NoTools", Message = infoText, MessagePriority = MessagePriority.Warning });
+                messages.Add(new ServiceMessage
+                {
+                    Code = "Warning",
+                    Message = "You are out of attack items. Please acquire new attack items."
+                });
             }
-            if (player.CurrentDefensePlayerItem == null)
+            if (player.CurrentDefensePlayerItem?.RemainingDefense <= 0)
             {
-                var infoText = "Playing without gear is hard. You lost extra fuel. Consider buying gear from the shop.";
-                serviceMessages.Add(new ServiceMessage { Code = "NoGear", Message = infoText, MessagePriority = MessagePriority.Warning });
+                messages.Add(new ServiceMessage
+                {
+                    Code = "Warning",
+                    Message = "You are out of defense items. Please acquire new defense items."
+                });
             }
-
-            return serviceMessages;
+            return messages;
         }
     }
 }

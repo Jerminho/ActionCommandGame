@@ -1,5 +1,7 @@
 ﻿using ActionCommandGame.Abstractions;
+using ActionCommandGame.DTO.Results;
 using ActionCommandGame.Services.Model.Results;
+
 
 namespace ActionCommandGame.Services.Helpers
 {
@@ -9,7 +11,7 @@ namespace ActionCommandGame.Services.Helpers
     /// </summary>
     public static class GameEventHelper
     {
-        public static PositiveGameEventResult? GetRandomPositiveGameEvent(IList<PositiveGameEventResult> gameEvents)
+        public static PositiveGameEventResultDto? GetRandomPositiveGameEvent(IList<PositiveGameEventResultDto> gameEvents)
         {
             //Calculate the chance based on the total probability of all gameEvents
             var dice = new Dice();
@@ -23,7 +25,7 @@ namespace ActionCommandGame.Services.Helpers
             return cumulativeGameEvent?.GameEvent;
         }
 
-        public static NegativeGameEventResult? GetRandomNegativeGameEvent(IList<NegativeGameEventResult>? gameEvents)
+        public static NegativeGameEventResultDto? GetRandomNegativeGameEvent(IList<NegativeGameEventResultDto>? gameEvents)
         {
 
             if (gameEvents is null)

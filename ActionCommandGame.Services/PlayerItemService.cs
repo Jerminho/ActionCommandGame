@@ -1,11 +1,11 @@
-﻿using ActionCommandGame.Model;
+﻿using ActionCommandGame.DTO.Results;
+using ActionCommandGame.Model;
 using ActionCommandGame.Repository;
 using ActionCommandGame.Services.Abstractions;
 using ActionCommandGame.Services.Extensions;
 using ActionCommandGame.Services.Extensions.Filters;
 using ActionCommandGame.Services.Model.Core;
 using ActionCommandGame.Services.Model.Filters;
-using ActionCommandGame.Services.Model.Results;
 using Microsoft.EntityFrameworkCore;
 
 namespace ActionCommandGame.Services
@@ -19,37 +19,38 @@ namespace ActionCommandGame.Services
             _database = database;
         }
 
-        public async Task<ServiceResult<PlayerItemResult>> Get(int id)
+        public async Task<ServiceResult<PlayerItemResultDto>> Get(int id)
         {
             var playerItem = await _database.PlayerItems
                 .ProjectToResult()
                 .SingleOrDefaultAsync(pi => pi.Id == id);
 
-            return new ServiceResult<PlayerItemResult>(playerItem);
+            // Map to DTO
+            return new ServiceResult<PlayerItemResultDto>(playerItem);
         }
 
-        public async Task<ServiceResult<IList<PlayerItemResult>>> Find(PlayerItemFilter filter)
+        public async Task<ServiceResult<IList<PlayerItemResultDto>>> Find(PlayerItemFilter filter)
         {
             var playerItems = await _database.PlayerItems
                 .ApplyFilter(filter)
                 .ProjectToResult()
                 .ToListAsync();
 
-            return new ServiceResult<IList<PlayerItemResult>>(playerItems);
+            return new ServiceResult<IList<PlayerItemResultDto>>(playerItems);
         }
 
-        public async Task<ServiceResult<PlayerItemResult>> Create(int playerId, int itemId)
+        public async Task<ServiceResult<PlayerItemResultDto>> Create(int playerId, int itemId)
         {
-            var player = _database.Players.SingleOrDefault(p => p.Id == playerId);
+            var player = await _database.Players.SingleOrDefaultAsync(p => p.Id == playerId);
             if (player == null)
             {
-                return new ServiceResult<PlayerItemResult>().PlayerNotFound();
+                return new ServiceResult<PlayerItemResultDto>().PlayerNotFound();
             }
 
-            var item = _database.Items.SingleOrDefault(i => i.Id == itemId);
+            var item = await _database.Items.SingleOrDefaultAsync(i => i.Id == itemId);
             if (item == null)
             {
-                return new ServiceResult<PlayerItemResult>().ItemNotFound();
+                return new ServiceResult<PlayerItemResultDto>().ItemNotFound();
             }
 
             var playerItem = new PlayerItem
@@ -63,7 +64,7 @@ namespace ActionCommandGame.Services
             player.Inventory.Add(playerItem);
             item.PlayerItems.Add(playerItem);
 
-            //Auto Equip the item you bought
+            // Auto Equip the item you bought
             if (item.Fuel > 0)
             {
                 playerItem.RemainingFuel = item.Fuel;
@@ -101,14 +102,14 @@ namespace ActionCommandGame.Services
             {
                 return new ServiceResult().NotFound();
             }
-            
+
             var player = playerItem.Player;
             player.Inventory.Remove(playerItem);
-            
+
             var item = playerItem.Item;
             item.PlayerItems.Remove(playerItem);
 
-            //Clear up equipment
+            // Clear up equipment
             if (player.CurrentFuelPlayerItemId == id)
             {
                 player.CurrentFuelPlayerItemId = null;
@@ -127,11 +128,10 @@ namespace ActionCommandGame.Services
 
             _database.PlayerItems.Remove(playerItem);
 
-            //Save Changes
+            // Save Changes
             await _database.SaveChangesAsync();
 
             return new ServiceResult();
         }
-        
     }
 }

@@ -1,10 +1,10 @@
-﻿using ActionCommandGame.Services.Model.Core;
-using ActionCommandGame.Services.Model.Results;
+﻿using ActionCommandGame.DTO.Results;
+using ActionCommandGame.Services.Model.Core;
 
 namespace ActionCommandGame.Services.Abstractions
 {
     public interface INegativeGameEventService
     {
-        Task<ServiceResult<NegativeGameEventResult>> GetRandomNegativeGameEvent();
+        Task<ServiceResult<NegativeGameEventResultDto>> GetRandomNegativeGameEvent();
     }
 }

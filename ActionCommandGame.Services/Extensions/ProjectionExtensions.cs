@@ -1,13 +1,13 @@
-﻿using ActionCommandGame.Model;
-using ActionCommandGame.Services.Model.Results;
+﻿using ActionCommandGame.DTO.Results;
+using ActionCommandGame.Model;
 
 namespace ActionCommandGame.Services.Extensions
 {
     public static class ProjectionExtensions
     {
-        public static IQueryable<PlayerResult> ProjectToResult(this IQueryable<Player> query)
+        public static IQueryable<PlayerResultDto> ProjectToResult(this IQueryable<Player> query)
         {
-            return query.Select(p => new PlayerResult
+            return query.Select(p => new PlayerResultDto
             {
                 Id = p.Id,
                 Name = p.Name,
@@ -31,9 +31,9 @@ namespace ActionCommandGame.Services.Extensions
             });
         }
 
-        public static IQueryable<PositiveGameEventResult> ProjectToResult(this IQueryable<PositiveGameEvent> query)
+        public static IQueryable<PositiveGameEventResultDto> ProjectToResult(this IQueryable<PositiveGameEvent> query)
         {
-            return query.Select(pge => new PositiveGameEventResult
+            return query.Select(pge => new PositiveGameEventResultDto
             {
                 Id = pge.Id,
                 Name = pge.Name,
@@ -44,9 +44,9 @@ namespace ActionCommandGame.Services.Extensions
             });
         }
 
-        public static IQueryable<NegativeGameEventResult> ProjectToResult(this IQueryable<NegativeGameEvent> query)
+        public static IQueryable<NegativeGameEventResultDto> ProjectToResult(this IQueryable<NegativeGameEvent> query)
         {
-            return query.Select(nge => new NegativeGameEventResult
+            return query.Select(nge => new NegativeGameEventResultDto
             {
                 Id=nge.Id,
                 Name = nge.Name,
@@ -58,9 +58,9 @@ namespace ActionCommandGame.Services.Extensions
             });
         }
 
-        public static IQueryable<PlayerItemResult> ProjectToResult(this IQueryable<PlayerItem> query)
+        public static IQueryable<PlayerItemResultDto> ProjectToResult(this IQueryable<PlayerItem> query)
         {
-            return query.Select(pi => new PlayerItemResult
+            return query.Select(pi => new PlayerItemResultDto
             {
                 Id = pi.Id,
                 ItemId = pi.ItemId,
@@ -78,9 +78,9 @@ namespace ActionCommandGame.Services.Extensions
             });
         }
 
-        public static IQueryable<ItemResult> ProjectToResult(this IQueryable<Item> query)
+        public static IQueryable<ItemResultDto> ProjectToResult(this IQueryable<Item> query)
         {
-            return query.Select(i => new ItemResult
+            return query.Select(i => new ItemResultDto
             {
                 Id = i.Id,
                 Name = i.Name,

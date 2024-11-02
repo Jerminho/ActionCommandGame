@@ -1,11 +1,11 @@
 ﻿using ActionCommandGame.Services.Model.Core;
-using ActionCommandGame.Services.Model.Results;
+using ActionCommandGame.DTO.Results; // Ensure you have the correct using directive
 
 namespace ActionCommandGame.Services.Abstractions
 {
     public interface IGameService
     {
-        Task<ServiceResult<GameResult>> PerformAction(int playerId);
-        Task<ServiceResult<BuyResult>> Buy(int playerId, int itemId);
+        Task<ServiceResult<BuyResultDto>> Buy(int playerId, int itemId);
+        Task<ServiceResult<GameResultDto>> PerformAction(int playerId);
     }
 }

@@ -1,15 +1,17 @@
-﻿using ActionCommandGame.Repository;
+﻿using ActionCommandGame.DTO.Filters;
+using ActionCommandGame.DTO.Results;
+using ActionCommandGame.Model;
+using ActionCommandGame.Repository;
 using ActionCommandGame.Services.Abstractions;
 using ActionCommandGame.Services.Extensions;
 using ActionCommandGame.Services.Extensions.Filters;
 using ActionCommandGame.Services.Model.Core;
-using ActionCommandGame.Services.Model.Filters;
-using ActionCommandGame.Services.Model.Results;
 using Microsoft.EntityFrameworkCore;
+using System.Linq;
 
 namespace ActionCommandGame.Services
 {
-    public class PlayerService: IPlayerService
+    public class PlayerService : IPlayerService
     {
         private readonly ActionCommandGameDbContext _database;
 
@@ -18,23 +20,28 @@ namespace ActionCommandGame.Services
             _database = database;
         }
 
-        public async Task<ServiceResult<PlayerResult>> Get(int id)
+        public async Task<ServiceResult<PlayerResultDto>> Get(int id)
         {
             var player = await _database.Players
+                .Where(p => p.Id == id)
                 .ProjectToResult()
-                .SingleOrDefaultAsync(p => p.Id == id);
+                .SingleOrDefaultAsync();
 
-            return new ServiceResult<PlayerResult>(player);
+
+            return new ServiceResult<PlayerResultDto>(player);
         }
 
-        public async Task<ServiceResult<IList<PlayerResult>>> Find(PlayerFilter? filter)
+        public async Task<ServiceResult<IList<PlayerResultDto>>> Find(PlayerFilterDto? filter)
         {
             var players = await _database.Players
                 .ApplyFilter(filter)
                 .ProjectToResult()
                 .ToListAsync();
 
-            return new ServiceResult<IList<PlayerResult>>(players);
+
+            return new ServiceResult<IList<PlayerResultDto>>(players);
         }
+
+        
     }
 }

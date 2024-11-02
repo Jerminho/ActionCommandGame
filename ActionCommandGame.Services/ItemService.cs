@@ -1,37 +1,115 @@
-﻿using ActionCommandGame.Repository;
+﻿using ActionCommandGame.DTO.Results;
+using ActionCommandGame.Model;
+using ActionCommandGame.Repository;
 using ActionCommandGame.Services.Abstractions;
 using ActionCommandGame.Services.Extensions;
 using ActionCommandGame.Services.Model.Core;
-using ActionCommandGame.Services.Model.Results;
 using Microsoft.EntityFrameworkCore;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
 
 namespace ActionCommandGame.Services
 {
-    public class ItemService: IItemService
+    public class ItemService : IItemService
     {
-        private readonly ActionCommandGameDbContext _dbContext;
+        private readonly ActionCommandGameDbContext _database;
 
-        public ItemService(ActionCommandGameDbContext dbContext)
+        public ItemService(ActionCommandGameDbContext database)
         {
-            _dbContext = dbContext;
+            _database = database;
         }
 
-        public async Task<ServiceResult<ItemResult>> Get(int id)
+        public async Task<ServiceResult<ItemResultDto>> Get(int itemId)
         {
-            var item = await _dbContext.Items
+            var itemDto = await _database.Items
+                .Where(i => i.Id == itemId)
                 .ProjectToResult()
-                .SingleOrDefaultAsync(i => i.Id == id);
+                .SingleOrDefaultAsync();
 
-            return new ServiceResult<ItemResult>(item);
+            return itemDto == null
+                ? new ServiceResult<ItemResultDto>().NotFound()
+                : new ServiceResult<ItemResultDto>(itemDto);
         }
 
-        public async Task<ServiceResult<IList<ItemResult>>> Find()
+        public async Task<ServiceResult<IList<ItemResultDto>>> Find()
         {
-            var items = await _dbContext.Items
+            var itemDtos = await _database.Items
                 .ProjectToResult()
                 .ToListAsync();
 
-            return new ServiceResult<IList<ItemResult>>(items);
+            return new ServiceResult<IList<ItemResultDto>>(itemDtos);
+        }
+
+        public async Task<ServiceResult<ItemResultDto>> Create(Item item)
+        {
+            _database.Items.Add(item);
+            await _database.SaveChangesAsync();
+
+            var createdItemDto = await _database.Items
+                .Where(i => i.Id == item.Id)
+                .ProjectToResult()
+                .SingleOrDefaultAsync();
+
+            return new ServiceResult<ItemResultDto>(createdItemDto)
+            {
+                Messages = new List<ServiceMessage>
+                {
+                    new ServiceMessage { Code = "Created", Message = "Item created successfully" }
+                }
+            };
+        }
+
+        public async Task<ServiceResult<ItemResultDto>> Update(Item item)
+        {
+            var existingItem = await _database.Items.SingleOrDefaultAsync(i => i.Id == item.Id);
+            if (existingItem == null)
+            {
+                return new ServiceResult<ItemResultDto>().NotFound();
+            }
+
+            existingItem.Name = item.Name;
+            existingItem.Description = item.Description;
+            existingItem.Price = item.Price;
+            existingItem.Fuel = item.Fuel;
+            existingItem.Attack = item.Attack;
+            existingItem.Defense = item.Defense;
+            existingItem.ActionCooldownSeconds = item.ActionCooldownSeconds;
+
+            await _database.SaveChangesAsync();
+
+            var updatedItemDto = await _database.Items
+                .Where(i => i.Id == item.Id)
+                .ProjectToResult()
+                .SingleOrDefaultAsync();
+
+            return new ServiceResult<ItemResultDto>(updatedItemDto)
+            {
+                Messages = new List<ServiceMessage>
+                {
+                    new ServiceMessage { Code = "Updated", Message = "Item updated successfully" }
+                }
+            };
+        }
+
+        public async Task<ServiceResult<ItemResultDto>> Delete(int itemId)
+        {
+            var item = await _database.Items.SingleOrDefaultAsync(i => i.Id == itemId);
+            if (item == null)
+            {
+                return new ServiceResult<ItemResultDto>().NotFound();
+            }
+
+            _database.Items.Remove(item);
+            await _database.SaveChangesAsync();
+
+            return new ServiceResult<ItemResultDto>
+            {
+                Messages = new List<ServiceMessage>
+                {
+                    new ServiceMessage { Code = "Deleted", Message = "Item deleted successfully" }
+                }
+            };
         }
     }
 }
