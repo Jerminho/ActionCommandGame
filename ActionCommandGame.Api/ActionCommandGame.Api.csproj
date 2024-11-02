@@ -11,11 +11,9 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="Controllers\" />
-  </ItemGroup>
-
-  <ItemGroup>
+    <ProjectReference Include="..\ActionCommandGame.DTO\ActionCommandGame.DTO.csproj" />
     <ProjectReference Include="..\ActionCommandGame.Repository\ActionCommandGame.Repository.csproj" />
+    <ProjectReference Include="..\ActionCommandGame.Services.Abstractions\ActionCommandGame.Services.Abstractions.csproj" />
   </ItemGroup>
 
 </Project>
