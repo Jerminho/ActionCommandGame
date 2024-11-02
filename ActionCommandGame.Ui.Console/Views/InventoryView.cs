@@ -1,6 +1,6 @@
-﻿using ActionCommandGame.DTO.Results;
+﻿using ActionCommandGame.DTO.Filters;
+using ActionCommandGame.DTO.Results;
 using ActionCommandGame.Services.Abstractions;
-using ActionCommandGame.Services.Model.Filters;
 using ActionCommandGame.Ui.ConsoleApp.Abstractions;
 using ActionCommandGame.Ui.ConsoleApp.ConsoleWriters;
 using ActionCommandGame.Ui.ConsoleApp.Stores;
@@ -23,7 +23,7 @@ namespace ActionCommandGame.Ui.ConsoleApp.Views
         {
             ConsoleBlockWriter.Write("Inventory");
 
-            var filter = new PlayerItemFilter { PlayerId = _memoryStore.CurrentPlayerId };
+            var filter = new PlayerItemFilterDto { PlayerId = _memoryStore.CurrentPlayerId };
             var inventoryResult = await _playerItemService.Find(filter);
 
             if (inventoryResult.Data is null)
