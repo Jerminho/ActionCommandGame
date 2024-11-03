@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
 	<PropertyGroup>
 		<OutputType>Exe</OutputType>
@@ -31,6 +31,7 @@
 	</ItemGroup>
 
 	<ItemGroup>
+		<ProjectReference Include="..\ActionCommandGame.Api\ActionCommandGame.Api.csproj" />
 		<ProjectReference Include="..\ActionCommandGame.Extensions\ActionCommandGame.Extensions.csproj" />
 		<ProjectReference Include="..\ActionCommandGame.Sdk\ActionCommandGame.Sdk.csproj" />
 		<ProjectReference Include="..\ActionCommandGame.Services.Abstractions\ActionCommandGame.Services.Abstractions.csproj" />
