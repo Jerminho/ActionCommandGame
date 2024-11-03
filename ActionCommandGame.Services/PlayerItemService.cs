@@ -6,7 +6,6 @@ using ActionCommandGame.Services.Abstractions;
 using ActionCommandGame.Services.Extensions;
 using ActionCommandGame.Services.Extensions.Filters;
 using ActionCommandGame.Services.Model.Core;
-using ActionCommandGame.Services.Model.Filters;
 using Microsoft.EntityFrameworkCore;
 
 namespace ActionCommandGame.Services

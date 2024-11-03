@@ -1,10 +1,12 @@
 ﻿using ActionCommandGame.Model;
 using ActionCommandGame.Repository.Extensions;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 
 namespace ActionCommandGame.Repository
 {
-    public class ActionCommandGameDbContext: DbContext
+    public class ActionCommandGameDbContext: IdentityDbContext<IdentityUser>
     {
         public ActionCommandGameDbContext(DbContextOptions<ActionCommandGameDbContext> options): base(options)
         {
@@ -17,31 +19,31 @@ namespace ActionCommandGame.Repository
         public DbSet<Player> Players { get; set; }
         public DbSet<PlayerItem> PlayerItems { get; set; }
 
-        // This method is called when the model is being created
+       
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
-            // Configure relationships and any additional entity configuration
+           
             modelBuilder.ConfigureRelationships();
 
-            // Example configuration for the Player entity
+            
             modelBuilder.Entity<Player>()
                 .Property(p => p.Name)
                 .IsRequired()
-                .HasMaxLength(100); // Adjust based on your requirements
+                .HasMaxLength(100); 
 
-            // Example configuration for the Item entity
+           
             modelBuilder.Entity<Item>()
                 .Property(i => i.Name)
                 .IsRequired()
-                .HasMaxLength(100); // Example length
+                .HasMaxLength(100);
 
             modelBuilder.Entity<Item>()
                 .Property(i => i.Price)
-                .IsRequired(); // Assuming Price should be required
+                .IsRequired();
 
-            // Add any additional configurations for other entities here
+            
 
-            base.OnModelCreating(modelBuilder); // Call the base class method
+            base.OnModelCreating(modelBuilder); 
         }
 
         public void Initialize()

@@ -5,9 +5,12 @@ using ActionCommandGame.Services.Abstractions;
 using ActionCommandGame.Ui.ConsoleApp.Navigation;
 using ActionCommandGame.Ui.ConsoleApp.Stores;
 using ActionCommandGame.Ui.ConsoleApp.Views;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.IdentityModel.Tokens;
 using System.Text;
 
 class Program
@@ -40,13 +43,44 @@ class Program
         Configuration?.Bind(nameof(AppSettings), appSettings);
         services.AddSingleton(appSettings);
 
-        var connectionString = "Server=NHP-LENOVO\\VIVES;Database=ActionCommandGame;Trusted_Connection=True;TrustServerCertificate=True;";
+        var connectionString = Configuration.GetConnectionString("ActionCommandGameDb");
 
-        // Register the DbContext with the DI container
+        services.AddHttpClient("MyApi", client =>
+        {
+            var apiUrl = Configuration["ApiUrl"];
+            client.BaseAddress = new Uri(apiUrl);
+        });
+
         services.AddDbContext<ActionCommandGameDbContext>(options =>
         {
-            options.UseSqlServer(connectionString); // Use the appropriate database provider
+            options.UseSqlServer(connectionString); 
         });
+
+        // Configure Identity
+        services.AddIdentity<IdentityUser, IdentityRole>()
+            .AddEntityFrameworkStores<ActionCommandGameDbContext>()
+            .AddDefaultTokenProviders();
+
+        // Configure JWT authentication
+        services.AddAuthentication(options =>
+        {
+            options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+            options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+        })
+        .AddJwtBearer(options =>
+        {
+            options.TokenValidationParameters = new TokenValidationParameters
+            {
+                ValidateIssuer = true,
+                ValidateAudience = true,
+                ValidateLifetime = true,
+                ValidateIssuerSigningKey = true,
+                ValidIssuer = Configuration["Jwt:Issuer"],
+                ValidAudience = Configuration["Jwt:Audience"],
+                IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(Configuration["Jwt:Key"]))
+            };
+        });
+
 
         // Register your services here
         services.AddScoped<IGameService, GameService>();
@@ -55,11 +89,12 @@ class Program
         services.AddScoped<INegativeGameEventService,NegativeGameEventService>();
         services.AddScoped<IPositiveGameEventService,PositiveGameEventService>();
         services.AddScoped<IPlayerItemService, PlayerItemService>();
+        services.AddScoped<IAuthenticationService, AuthenticationService>();
 
-        // Register other services
+
         services.AddSingleton<MemoryStore>();
         services.AddTransient<NavigationManager>();
-        // Register the Views
+       
         services.AddTransient<ExitView>();
         services.AddTransient<GameView>();
         services.AddTransient<HelpView>();
@@ -68,5 +103,7 @@ class Program
         services.AddTransient<PlayerSelectionView>();
         services.AddTransient<ShopView>();
         services.AddTransient<TitleView>();
+        services.AddTransient<LoginView>();
+        services.AddTransient<RegisterView>();
     }
 }

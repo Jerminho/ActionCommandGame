@@ -1,6 +1,5 @@
 ﻿using ActionCommandGame.DTO.Filters;
 using ActionCommandGame.Model;
-using ActionCommandGame.Services.Model.Filters;
 
 namespace ActionCommandGame.Services.Extensions.Filters
 {

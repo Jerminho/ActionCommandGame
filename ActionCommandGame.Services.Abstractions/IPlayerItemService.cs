@@ -1,7 +1,6 @@
 ﻿using ActionCommandGame.DTO.Filters;
 using ActionCommandGame.DTO.Results;
 using ActionCommandGame.Services.Model.Core;
-using ActionCommandGame.Services.Model.Filters;
 
 namespace ActionCommandGame.Services.Abstractions
 {
